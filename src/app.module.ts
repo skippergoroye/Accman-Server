@@ -9,6 +9,7 @@ import { TransactionsModule } from './transactions/transactions.module';
 import { EmailModule } from './email/email.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { User } from './auth/entities/user.entity';
 
 @Module({
   imports: [
@@ -26,7 +27,8 @@ import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_DATABASE'),
-        entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+        entities: [User],
+        // entities: [__dirname + '/../**/*.entity{.ts,.js}'],
         synchronize: false,
         logging: true, 
       }),

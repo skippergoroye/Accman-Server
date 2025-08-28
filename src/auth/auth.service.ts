@@ -1,14 +1,12 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
+import { RegisterDto } from './dto/register.dto'; 
 import { User } from './entities/user.entity';
 import { LoginDto } from './dto/login.dto';
+import { JwtService } from '@nestjs/jwt';
 
-
-
-@Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
@@ -16,8 +14,38 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
+  async register(registerDto: RegisterDto) {
+    const { email, password } = registerDto;
 
-    async validateUser(email: string, password: string): Promise<User> {
+    // Check if email exists
+    const existingUser = await this.usersRepo.findOneBy({ email });
+    if (existingUser) {
+      throw new ConflictException('Email already registered');
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create user
+    const user = this.usersRepo.create({
+      ...registerDto,
+      password: hashedPassword,
+    });
+
+    // Save & return saved user
+    const newUser = await this.usersRepo.save(user);
+
+    return {
+      message: 'Registration successful',
+      user: { id: newUser.id, email: newUser.email },
+    };
+  }
+
+
+  /**
+   * Validate user credentials
+   */
+  private async validateUser(email: string, password: string): Promise<User> {
     const user = await this.usersRepo.findOne({ where: { email } });
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
@@ -27,6 +55,9 @@ export class AuthService {
     return user;
   }
 
+  /**
+   * Login user with JWT
+   */
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.email, loginDto.password);
 
@@ -37,5 +68,4 @@ export class AuthService {
       user: { id: user.id, email: user.email },
     };
   }
-  
 }

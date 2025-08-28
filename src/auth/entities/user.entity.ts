@@ -9,10 +9,13 @@ export class User {
   email: string;
 
   @Column()
-  password: string; // hashed
+  password: string;
 
-  @Column({ default: true })
-  isActive: boolean;
+  @Column()
+  firstName: string;
+
+  @Column()
+  lastName: string;
 
   @CreateDateColumn()
   createdAt: Date;
