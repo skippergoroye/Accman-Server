@@ -42,18 +42,7 @@ export class AuthService {
   }
 
 
-  /**
-   * Validate user credentials
-   */
-  private async validateUser(email: string, password: string): Promise<User> {
-    const user = await this.usersRepo.findOne({ where: { email } });
-    if (!user) throw new UnauthorizedException('Invalid credentials');
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) throw new UnauthorizedException('Invalid credentials');
-
-    return user;
-  }
+ 
 
   /**
    * Login user with JWT
@@ -67,5 +56,19 @@ export class AuthService {
       access_token: this.jwtService.sign(payload),
       user: { id: user.id, email: user.email },
     };
+  }
+
+
+   /*
+   * Validate user credentials
+   */
+  private async validateUser(email: string, password: string): Promise<User> {
+    const user = await this.usersRepo.findOne({ where: { email } });
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) throw new UnauthorizedException('Invalid credentials');
+
+    return user;
   }
 }

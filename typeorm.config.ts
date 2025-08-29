@@ -5,12 +5,29 @@ config();
 
 export default new DataSource({
   type: 'postgres',
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT ?? '5432'),
-  username: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE,
+  url: process.env.DATABASE_URL,
   synchronize: false,
+  ssl: { rejectUnauthorized: false },
+  extra: { ssl: { rejectUnauthorized: false } },
+  logging: true,
   entities: ['dist/**/*.entity{.ts,.js}'],
   migrations: ['dist/src/migrations/**/*{.ts,.js}'],
 });
+
+
+// import { TypeOrmModule } from '@nestjs/typeorm';
+// import { ConfigModule, ConfigService } from '@nestjs/config';
+
+// export default TypeOrmModule.forRootAsync({
+//   imports: [ConfigModule],
+//   useFactory: (configService: ConfigService): TypeOrmModuleOptions => ({
+//     type: 'postgres',
+//     url: configService.get<string>('DATABASE_URL'),
+//     autoLoadEntities: true,
+//     synchronize: false,
+//     ssl: { rejectUnauthorized: false },
+//     extra: { ssl: { rejectUnauthorized: false } },
+//     logging: true,
+//   }),
+//   inject: [ConfigService],
+// });
