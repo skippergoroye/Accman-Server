@@ -11,6 +11,7 @@ import { Verification } from './entities/verification.entity';
 import { EmailService } from '../email/email.service';
 import { RegisterDto } from './dto/register.dto';
 import { User } from 'src/users/entities/user.entity';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 
 @Injectable()
 export class AuthService {
@@ -23,9 +24,13 @@ export class AuthService {
     private readonly emailService: EmailService,
   ) {}
 
+
+
+  /** --------- Register user --------******/
+
   async register(
     registerDto: RegisterDto,
-  ): Promise<{ status: string; message: string; user: User; accessToken: string }> {
+  ): Promise<{ status: string; message: string; user?: User; accessToken: string }> {
     const { firstName, lastName, email, password, phoneNumber } = registerDto;
     const sanitizedEmail = email.trim().toLowerCase();
 
@@ -80,13 +85,57 @@ export class AuthService {
       role: savedUser.role,
     });
 
+
+
     return {
       status: 'success',
       message: 'User registered successfully',
-      user: savedUser,
+      // user: savedUser,
       accessToken,
     };
   }
+
+
+
+
+  /** --------- Verify user --------******/
+
+  async verifyEmail({ email, otp }: VerifyEmailDto): Promise<{ status: string; message: string }> {
+
+  const sanitizedEmail = email.trim().toLowerCase();
+  const verification = await this.verificationRepository.findOne({
+    where: { email: sanitizedEmail, otp },
+  });
+  if (!verification) {
+    throw new BadRequestException({
+      status: 'error',
+      message: 'Invalid or expired OTP',
+    });
+  }
+  if (verification.expiresAt < new Date()) {
+    await this.verificationRepository.delete({ email: sanitizedEmail });
+    throw new BadRequestException({
+      status: 'error',
+      message: 'OTP has expired',
+    });
+  }
+  const user = await this.userRepository.findOne({
+    where: { email: sanitizedEmail },
+  });
+  if (!user) {
+    throw new BadRequestException({
+      status: 'error',
+      message: 'User not found',
+    });
+  }
+  user.isVerified = true;
+  await this.userRepository.save(user);
+  await this.verificationRepository.delete({ email: sanitizedEmail });
+  return {
+    status: 'success',
+    message: 'Email verified successfully',
+  };
+}
 
   async cleanExpiredOtps(): Promise<void> {
     await this.verificationRepository.delete({

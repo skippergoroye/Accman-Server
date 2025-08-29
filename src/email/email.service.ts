@@ -1,31 +1,228 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { createTransport } from 'nodemailer';
+// import { Injectable, Logger } from '@nestjs/common';
+// import { createTransport } from 'nodemailer';
+
+// @Injectable()
+// export class EmailService {
+//   private readonly logger = new Logger(EmailService.name);
+//   private readonly transporter = createTransport({
+//     service: process.env.EMAIL_SERVICE || 'gmail',
+//     auth: {
+//       user: process.env.EMAIL_USER,
+//       pass: process.env.EMAIL_PASS,
+//     },
+//   });
+
+//   async sendVerificationEmail(email: string, otp: string): Promise<void> {
+//     const mailOptions = {
+//       from: process.env.EMAIL_USER,
+//       to: email,
+//       subject: 'Verify Your Email',
+//       text: `Your OTP for email verification is: ${otp}. It expires in 10 minutes.`,
+//     };
+
+//     try {
+//       await this.transporter.sendMail(mailOptions);
+//       this.logger.log(`Verification email sent to ${email}`);
+//     } catch (error) {
+//       // console.log(error)
+//       this.logger.error(`Failed to send email to ${email}: ${error.message}`);
+//       throw error;
+//     }
+//   }
+// }
+
+
+
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class EmailService {
-  private readonly logger = new Logger(EmailService.name);
-  private readonly transporter = createTransport({
-    service: process.env.EMAIL_SERVICE || 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+  private template: string;
 
-  async sendVerificationEmail(email: string, otp: string): Promise<void> {
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: 'Verify Your Email',
-      text: `Your OTP for email verification is: ${otp}. It expires in 10 minutes.`,
-    };
+  constructor() {
+    this.template = `<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml"
+    xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="title" content="ADA">
+    <meta name="x-apple-disable-message-reformatting">
+    <title></title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,600" rel="stylesheet" type="text/css">
+    <style>
+        html,
+        body {
+            margin: 0 auto !important;
+            padding: 0 !important;
+            height: 100% !important;
+            width: 100% !important;
+            font-family: 'Roboto', sans-serif !important;
+            font-size: 14px;
+            margin-bottom: 10px;
+            line-height: 24px;
+            color: #8094ae;
+            font-weight: 400;
+        }
+        * {
+            -ms-text-size-adjust: 100%;
+            -webkit-text-size-adjust: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        table,
+        td {
+            mso-table-lspace: 0pt !important;
+            mso-table-rspace: 0pt !important;
+        }
+        table {
+            border-spacing: 0 !important;
+            border-collapse: collapse !important;
+            table-layout: fixed !important;
+            margin: 0 auto !important;
+        }
+        table table table {
+            table-layout: auto;
+        }
+        a {
+            text-decoration: none;
+        }
+        img {
+            -ms-interpolation-mode: bicubic;
+        }
+    </style>
+</head>
+<body width="100%" style="margin: 0; padding: 0 !important; mso-line-height-rule: exactly; background-color: #f5f6fa;">
+    <center style="width: 100%; background-color: #f5f6fa;">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#f5f6fa">
+            <tr>
+                <td style="padding: 40px 0;">
+                    <table style="width:100%;max-width:620px;margin:0 auto;">
+                        <tbody>
+                            <tr>
+                                <td style="text-align: center; padding-bottom:25px">
+                                    <a href="#APPURL#" style="font-size:25px;font-weight: bold;color:#000000;">
+                                        #APP_NAME#</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <table style="width:100%;max-width:620px;margin:0 auto;background-color:#ffffff;">
+                        <tbody>
+                            <tr>
+                                <td style="padding: 30px 30px 20px">
+                                    <p style="margin-bottom: 10px; color: #000000;text-transform: uppercase;">Hello
+                                        #NAME#,</p>
+                                    <p style="margin-bottom: 10px;text-transform: capitalize;color:#000000; text-align: left;">
+                                        #MESSAGE#
+                                    </p>
+                                    <p style="margin-bottom: 10px;text-transform: uppercase;color:#000000; text-align: left;">
+                                        <b>Have Questions or Need Assistance?</b>
+                                    </p>
+                                    <p>Our dedicated support team is here to help you with any queries you might have.
+                                        Feel free to reach out to us at #SUPPORT_MAIL# if you need assistance at any
+                                        point.</p>
+                                    <p style="margin-bottom: 10px;">
+                                        Thank you for choosing #APP_NAME#. We can't wait to see you thrive and make the
+                                        most of your journey with us!
+                                    </p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <table style="width:100%;max-width:620px;margin:0 auto;">
+                        <tbody>
+                            <tr>
+                                <td style="text-align: center; padding:25px 20px 0;">
+                                    <p style="font-size: 13px;">Stay updated on the latest news, tips, and discussions
+                                        in the world of decentralized finance.</p>
+                                    <p>Follow us on social media:</p>
+                                    <ul style="margin: 10px -4px 0;padding: 0;">
+                                        <li style="display: inline-block; list-style: none; padding: 4px;"><a
+                                                style="display: inline-block; height: 30px; width:30px;border-radius: 50%; background-color: #ffffff"
+                                                href=""><img style="width: 30px"
+                                                    src="https://www.iconpacks.net/icons/2/free-twitter-logo-icon-2429-thumb.png"
+                                                    alt="brand"></a></li>
+                                        <li style="display: inline-block; list-style: none; padding: 4px;"><a
+                                                style="display: inline-block; height: 30px; width:30px;border-radius: 50%; background-color: #ffffff"
+                                                href=""><img style="width: 30px"
+                                                    src="https://cdn-icons-png.flaticon.com/512/2504/2504848.png"
+                                                    alt="brand"></a></li>
+                                        <li style="display: inline-block; list-style: none; padding: 4px;"><a
+                                                style="display: inline-block; height: 30px; width:30px;border-radius: 50%; background-color: #ffffff"
+                                                href=""><img style="width: 30px"
+                                                    src="http://cdn.onlinewebfonts.com/svg/img_256332.png"
+                                                    alt="brand"></a></li>
+                                    </ul>
+                                    <p style="padding-top: 15px; font-size: 12px;">This email was sent to you as a
+                                        registered user of <a style="color: #3876b4; text-decoration:none;"
+                                            href="#">#APP_NAME#</a></p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </center>
+</body>
+</html>`;
+  }
+
+  async sendVerificationEmail(to: string, otp: string): Promise<void> {
+    const subject = 'Verify Your Email';
+    const message = `Your OTP for email verification is <b>${otp}</b>. It expires in 10 minutes.`;
+    await this.sendMail(to, subject, message);
+  }
+
+  async sendForgotPasswordMail(to: string, code: string): Promise<void> {
+    const subject = 'Forgot Password';
+    const message = `Your password reset code is <b>${code}</b>. It expires in 10 minutes.`;
+    await this.sendMail(to, subject, message);
+  }
+
+  private replaceTemplateConstant(template: string, key: string, data: string): string {
+    const regex = new RegExp(key, 'g');
+    return template.replace(regex, data);
+  }
+
+  private async sendMail(to: string, subject: string, message: string): Promise<void> {
+    const appName = process.env.APPNAME || 'Account Management System';
+    const supportMail = process.env.SUPPORT_MAIL || 'support@example.com';
+    const appUrl = process.env.APPURL || 'https://example.com';
+    const name = to.split('@')[0];
+
+    let html = this.replaceTemplateConstant(this.template, '#APP_NAME#', appName);
+    html = this.replaceTemplateConstant(html, '#NAME#', name);
+    html = this.replaceTemplateConstant(html, '#MESSAGE#', message);
+    html = this.replaceTemplateConstant(html, '#SUPPORT_MAIL#', supportMail);
+    html = this.replaceTemplateConstant(html, '#APPURL#', appUrl);
+
+    const transport = nodemailer.createTransport({
+      service: process.env.EMAIL_SERVICE || 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
 
     try {
-      await this.transporter.sendMail(mailOptions);
-      this.logger.log(`Verification email sent to ${email}`);
+      await transport.sendMail({
+        from: process.env.EMAIL_USER,
+        to,
+        subject,
+        text: message,
+        html,
+      });
+
     } catch (error) {
-      this.logger.error(`Failed to send email to ${email}: ${error.message}`);
-      throw error;
+
+      throw new InternalServerErrorException({
+        status: 'error',
+        message: 'Failed to send email',
+      });
     }
   }
 }
