@@ -65,8 +65,7 @@ import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    // TypeOrmModule.forRoot(dataSourceOptions),
-
+ 
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService): TypeOrmModuleOptions => ({

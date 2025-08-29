@@ -15,19 +15,3 @@ export default new DataSource({
 });
 
 
-// import { TypeOrmModule } from '@nestjs/typeorm';
-// import { ConfigModule, ConfigService } from '@nestjs/config';
-
-// export default TypeOrmModule.forRootAsync({
-//   imports: [ConfigModule],
-//   useFactory: (configService: ConfigService): TypeOrmModuleOptions => ({
-//     type: 'postgres',
-//     url: configService.get<string>('DATABASE_URL'),
-//     autoLoadEntities: true,
-//     synchronize: false,
-//     ssl: { rejectUnauthorized: false },
-//     extra: { ssl: { rejectUnauthorized: false } },
-//     logging: true,
-//   }),
-//   inject: [ConfigService],
-// });
