@@ -74,7 +74,6 @@ import { User } from './users/entities/user.entity';
         url: configService.get<string>('DATABASE_URL'),
         autoLoadEntities: true,
         synchronize: false,
-        entities: [User],
         ssl: { rejectUnauthorized: false },
         extra: { ssl: { rejectUnauthorized: false } },
         logging: true,
