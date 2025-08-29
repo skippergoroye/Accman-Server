@@ -57,7 +57,7 @@ import { TransactionsModule } from './transactions/transactions.module';
 import { EmailModule } from './email/email.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
-// import { dataSourceOptions } from 'db/data-source';
+
 
 @Module({
   imports: [
