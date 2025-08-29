@@ -2,7 +2,7 @@ import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
-import { RegisterDto } from './dto/register.dto'; 
+import { RegisterDto } from './dto/register.dto';
 import { User } from './entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
@@ -41,25 +41,24 @@ export class AuthService {
     };
   }
 
-
- 
-
   /**
    * Login user with JWT
    */
+
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.email, loginDto.password);
 
     const payload = { sub: user.id, email: user.email };
 
     return {
+      status: 'success',
+      message: 'Login successful',
       access_token: this.jwtService.sign(payload),
       user: { id: user.id, email: user.email },
     };
   }
 
-
-   /*
+  /*
    * Validate user credentials
    */
   private async validateUser(email: string, password: string): Promise<User> {
@@ -67,7 +66,8 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) throw new UnauthorizedException('Invalid credentials');
+    if (!isPasswordValid)
+      throw new UnauthorizedException('Invalid credentials');
 
     return user;
   }
