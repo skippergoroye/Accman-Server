@@ -1,74 +1,96 @@
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import {
+  Injectable,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import * as bcrypt from 'bcrypt';
-import { RegisterDto } from './dto/register.dto';
-import { User } from './entities/user.entity';
-import { LoginDto } from './dto/login.dto';
+import { Repository, LessThanOrEqual } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
+import { Verification } from './entities/verification.entity';
+import { EmailService } from '../email/email.service';
+import { RegisterDto } from './dto/register.dto';
+import { User } from 'src/users/entities/user.entity';
 
+@Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
-    private usersRepo: Repository<User>,
-    private jwtService: JwtService,
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(Verification)
+    private readonly verificationRepository: Repository<Verification>,
+    private readonly jwtService: JwtService,
+    private readonly emailService: EmailService,
   ) {}
 
-  async register(registerDto: RegisterDto) {
-    const { email, password } = registerDto;
+  async register(
+    registerDto: RegisterDto,
+  ): Promise<{ status: string; message: string; user: User; accessToken: string }> {
+    const { firstName, lastName, email, password, phoneNumber } = registerDto;
+    const sanitizedEmail = email.trim().toLowerCase();
 
-    // Check if email exists
-    const existingUser = await this.usersRepo.findOneBy({ email });
-    if (existingUser) {
-      throw new ConflictException('Email already registered');
+    // Check if user exists
+    const userExists = await this.userRepository.findOne({
+      where: { email: sanitizedEmail },
+    });
+    if (userExists) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'User already exists',
+      });
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hash = await bcrypt.hash(password, 10);
 
     // Create user
-    const user = this.usersRepo.create({
-      ...registerDto,
-      password: hashedPassword,
+    const newUser = this.userRepository.create({
+      firstName: firstName,
+      lastName: lastName,
+      email: sanitizedEmail,
+      password: hash,
+      phoneNumber: phoneNumber,
+      isVerified: false,
+      walletBalance: 0,
     });
 
-    // Save & return saved user
-    const newUser = await this.usersRepo.save(user);
+    const savedUser: User = await this.userRepository.save(newUser);
 
-    return {
-      message: 'Registration successful',
-      user: { id: newUser.id, email: newUser.email },
-    };
-  }
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-  /**
-   * Login user with JWT
-   */
+    await this.verificationRepository.save(
+      this.verificationRepository.create({ email: sanitizedEmail, otp, expiresAt }),
+    );
 
-  async login(loginDto: LoginDto) {
-    const user = await this.validateUser(loginDto.email, loginDto.password);
+    // Send verification email
+    try {
+      await this.emailService.sendVerificationEmail(sanitizedEmail, otp);
+    } catch {
+      throw new InternalServerErrorException({
+        status: 'error',
+        message: 'Failed to send verification email',
+      });
+    }
 
-    const payload = { sub: user.id, email: user.email };
+    // Generate JWT
+    const accessToken = this.jwtService.sign({
+      sub: savedUser.id,
+      role: savedUser.role,
+    });
 
     return {
       status: 'success',
-      message: 'Login successful',
-      access_token: this.jwtService.sign(payload),
-      user: { id: user.id, email: user.email },
+      message: 'User registered successfully',
+      user: savedUser,
+      accessToken,
     };
   }
 
-  /*
-   * Validate user credentials
-   */
-  private async validateUser(email: string, password: string): Promise<User> {
-    const user = await this.usersRepo.findOne({ where: { email } });
-    if (!user) throw new UnauthorizedException('Invalid credentials');
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid)
-      throw new UnauthorizedException('Invalid credentials');
-
-    return user;
+  async cleanExpiredOtps(): Promise<void> {
+    await this.verificationRepository.delete({
+      expiresAt: LessThanOrEqual(new Date()),
+    });
   }
 }

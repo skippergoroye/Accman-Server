@@ -57,6 +57,7 @@ import { TransactionsModule } from './transactions/transactions.module';
 import { EmailModule } from './email/email.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { User } from './users/entities/user.entity';
 
 
 @Module({
@@ -73,6 +74,7 @@ import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
         url: configService.get<string>('DATABASE_URL'),
         autoLoadEntities: true,
         synchronize: false,
+        entities: [User],
         ssl: { rejectUnauthorized: false },
         extra: { ssl: { rejectUnauthorized: false } },
         logging: true,

@@ -1,26 +1,31 @@
-import { Injectable } from '@nestjs/common';
-import { CreateEmailDto } from './dto/create-email.dto';
-import { UpdateEmailDto } from './dto/update-email.dto';
+import { Injectable, Logger } from '@nestjs/common';
+import { createTransport } from 'nodemailer';
 
 @Injectable()
 export class EmailService {
-  create(createEmailDto: CreateEmailDto) {
-    return 'This action adds a new email';
-  }
+  private readonly logger = new Logger(EmailService.name);
+  private readonly transporter = createTransport({
+    service: process.env.EMAIL_SERVICE || 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
 
-  findAll() {
-    return `This action returns all email`;
-  }
+  async sendVerificationEmail(email: string, otp: string): Promise<void> {
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Verify Your Email',
+      text: `Your OTP for email verification is: ${otp}. It expires in 10 minutes.`,
+    };
 
-  findOne(id: number) {
-    return `This action returns a #${id} email`;
-  }
-
-  update(id: number, updateEmailDto: UpdateEmailDto) {
-    return `This action updates a #${id} email`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} email`;
+    try {
+      await this.transporter.sendMail(mailOptions);
+      this.logger.log(`Verification email sent to ${email}`);
+    } catch (error) {
+      this.logger.error(`Failed to send email to ${email}: ${error.message}`);
+      throw error;
+    }
   }
 }

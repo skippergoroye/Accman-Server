@@ -1,21 +1,22 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
-import { User } from './entities/user.entity';
-
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+import { User } from '../users/entities/user.entity';
+import { Verification } from './entities/verification.entity';
+import { EmailService } from '../email/email.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Verification]),
     JwtModule.register({
-      global: true,
+       global: true,
       secret: process.env.JWT_SECRET || 'supersecretkey',
       signOptions: { expiresIn: process.env.JWT_EXPIRE_DAY || '1d' },
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, EmailService],
 })
 export class AuthModule {}
