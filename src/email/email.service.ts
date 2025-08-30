@@ -177,11 +177,47 @@ export class EmailService {
     await this.sendMail(to, subject, message);
   }
 
-  async sendForgotPasswordMail(to: string, code: string): Promise<void> {
-    const subject = 'Forgot Password';
-    const message = `Your password reset code is <b>${code}</b>. It expires in 10 minutes.`;
-    await this.sendMail(to, subject, message);
+//   async sendForgotPasswordMail(to: string, code: string): Promise<void> {
+//     const subject = 'Forgot Password';
+//     const message = `Your password reset code is <b>${code}</b>. It expires in 10 minutes.`;
+//     await this.sendMail(to, subject, message);
+//   }
+
+
+async sendForgotPasswordMail(email: string, resetLink: string): Promise<void> {
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: 'Forgot Password',
+    html: `
+      <p>Hello ${email.split('@')[0]},</p>
+      <p>We received a request to reset the password for your account. Please click the link below to reset your password:</p>
+      <p><a href="${resetLink}" style="background:#3876b4;color:#fff;padding:10px 15px;border-radius:6px;text-decoration:none;">Reset Password</a></p>
+      <p>If you didn’t request this, please ignore this email.</p>
+      <br>
+      <p>Thanks,</p>
+      <p>${process.env.APPNAME || 'Account Management System'} Team</p>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    throw new InternalServerErrorException({
+      status: 'error',
+      message: 'Failed to send password reset email',
+    });
   }
+}
+
 
   private replaceTemplateConstant(template: string, key: string, data: string): string {
     const regex = new RegExp(key, 'g');

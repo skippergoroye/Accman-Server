@@ -3,9 +3,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { User } from '../users/entities/user.entity';
 import { Verification } from './entities/verification.entity';
 import { EmailService } from '../email/email.service';
+import { User } from 'src/users/entities/user.entity';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { EmailService } from '../email/email.service';
       secret: process.env.JWT_SECRET || 'supersecretkey',
       signOptions: { expiresIn: process.env.JWT_EXPIRE_DAY || '1d' },
     }),
+    ConfigModule
   ],
   controllers: [AuthController],
   providers: [AuthService, EmailService],

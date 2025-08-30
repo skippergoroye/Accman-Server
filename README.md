@@ -46,13 +46,13 @@ npm run typeorm migration:show -- -d typeorm.config.ts
 # sql qeury command
 # To search
 SELECT * FROM users
-WHERE email = 'skippergoroye@gmail.com';
+WHERE email = 'skippergoroye@gmail.com'
 
 
 
 # To delete user 
 DELETE FROM users
-WHERE email = 'skippergoroye@gmail.com';
+WHERE email = 'skippergoroye@gmail.com'
 
 
 

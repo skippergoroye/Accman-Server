@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -18,8 +19,14 @@ export class AuthController {
     return await this.authService.verifyEmail(verifyEmailDto);
   }
 
-  // @Post('login/user')
-  // async login(@Body() dto: LoginDto) {
-  //   return this.authService.login(dto);
-  // }
+  @Post('login/user')
+  async login(@Body() dto: LoginDto) {
+    return this.authService.login(dto);
+  }
+
+
+  @Post('forgot-password')
+async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+  return await this.authService.forgotPassword(forgotPasswordDto);
+}
 }
