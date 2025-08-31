@@ -177,11 +177,7 @@ export class EmailService {
     await this.sendMail(to, subject, message);
   }
 
-//   async sendForgotPasswordMail(to: string, code: string): Promise<void> {
-//     const subject = 'Forgot Password';
-//     const message = `Your password reset code is <b>${code}</b>. It expires in 10 minutes.`;
-//     await this.sendMail(to, subject, message);
-//   }
+
 
 
 async sendForgotPasswordMail(email: string, resetLink: string): Promise<void> {
