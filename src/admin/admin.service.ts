@@ -103,6 +103,7 @@ export class AdminService {
     status: string;
     message: string;
     accessToken: string;
+    admin: Partial<Admin>;
   }> {
     try {
       const sanitizedEmail = email?.trim().toLowerCase();
@@ -117,7 +118,15 @@ export class AdminService {
 
       const admin = await this.adminRepository.findOne({
         where: { email: sanitizedEmail },
-        select: ['id', 'password', 'role', 'isVerified'],
+        select: [
+          'id',
+          'firstName',
+          'lastName',
+          'email',
+          'role',
+          'isVerified',
+          'password', // needed for validation, will strip before return
+        ],
       });
 
       if (
@@ -142,18 +151,20 @@ export class AdminService {
         role: admin.role ?? 'admin',
       });
 
+      // remove password before returning
+      const { password: _, ...safeAdmin } = admin;
+
       return {
         status: 'success',
         message: 'Login successful',
         accessToken,
+        admin: safeAdmin, // ✅ returns user without password
       };
     } catch (error) {
-      // if it's already a known NestJS HttpException, rethrow it
       if (error instanceof BadRequestException) {
         throw error;
       }
 
-      // otherwise wrap in InternalServerErrorException
       throw new InternalServerErrorException({
         status: 'error',
         message: error?.message || 'Something went wrong during login',
@@ -256,7 +267,7 @@ export class AdminService {
         accessToken,
       };
     } catch (error) {
-       console.error(error); 
+      console.error(error);
       if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException({
         status: 'error',
