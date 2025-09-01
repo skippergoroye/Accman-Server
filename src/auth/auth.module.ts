@@ -6,19 +6,24 @@ import { AuthService } from './auth.service';
 import { Verification } from './entities/verification.entity';
 import { EmailService } from '../email/email.service';
 import { User } from 'src/users/entities/user.entity';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Verification]),
-    JwtModule.register({
-       global: true,
-      secret: process.env.JWT_SECRET || 'supersecretkey',
-      signOptions: { expiresIn: process.env.JWT_EXPIRE_DAY || '1d' },
+     ConfigModule.forRoot({ isGlobal: true }),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>('JWT_SECRET') || 'your_jwt_secret',
+        signOptions: { expiresIn: '1d' },
+      }),
     }),
-    ConfigModule
   ],
   controllers: [AuthController],
-  providers: [AuthService, EmailService],
+  providers: [AuthService, EmailService, JwtAuthGuard],
+  exports: [JwtModule, JwtAuthGuard],
 })
 export class AuthModule {}

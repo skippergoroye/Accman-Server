@@ -3,12 +3,13 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-import { AccountsModule } from './accounts/accounts.module';
 import { AdminModule } from './admin/admin.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { EmailModule } from './email/email.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { AccoutSettingsModule } from './accout-settings/accout-settings.module';
 
 
 
@@ -16,7 +17,7 @@ import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      // envFilePath: '.env',
+      envFilePath: '.env',
     }),
  
     TypeOrmModule.forRootAsync({
@@ -34,10 +35,11 @@ import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
     }),
     AuthModule,
     UsersModule,
-    AccountsModule,
     AdminModule,
     TransactionsModule,
     EmailModule,
+    DashboardModule,
+    AccoutSettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
