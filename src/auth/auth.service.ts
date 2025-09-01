@@ -22,25 +22,21 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 @Injectable()
 export class AuthService {
   constructor(
-  @InjectRepository(User)
-  private readonly userRepository: Repository<User>,  
-  @InjectRepository(Verification)
-  private readonly verificationRepository: Repository<Verification>,
-  private readonly jwtService: JwtService,
-  private readonly emailService: EmailService,
-  private readonly configService: ConfigService,    
-) {}
-
-  
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(Verification)
+    private readonly verificationRepository: Repository<Verification>,
+    private readonly jwtService: JwtService,
+    private readonly emailService: EmailService,
+    private readonly configService: ConfigService,
+  ) {}
 
   /** --------- Register user --------******/
 
-  async register(
-    registerDto: RegisterDto,
-  ): Promise<{
+  async register(registerDto: RegisterDto): Promise<{
     status: string;
     message: string;
-    user?: User;
+    user?: Partial<User>;
     accessToken?: string;
   }> {
     const { firstName, lastName, email, password, phoneNumber } = registerDto;
@@ -102,10 +98,13 @@ export class AuthService {
       role: savedUser.role,
     });
 
+    // ✅ Remove password before returning
+    const { password: _, ...userWithoutPassword } = savedUser;
+
     return {
       status: 'success',
       message: 'User registered successfully',
-      // user: savedUser,
+      user: userWithoutPassword,
       accessToken,
     };
   }
@@ -159,9 +158,7 @@ export class AuthService {
 
   /** --------- Login user --------******/
 
-  async login(
-    loginDto: LoginDto,
-  ): Promise<{
+  async login(loginDto: LoginDto): Promise<{
     status: string;
     message: string;
     user: Partial<User>;
@@ -243,9 +240,7 @@ export class AuthService {
     };
   }
 
-
-
-   /** --------- Forgot password --------******/
+  /** --------- Forgot password --------******/
 
   async forgotPassword(
     forgotPasswordDto: ForgotPasswordDto,
@@ -286,11 +281,10 @@ export class AuthService {
     user.resetToken = resetCode;
     user.resetTokenExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-  
-      await this.userRepository.save(user);
-      const clientUrl = this.configService.get<string>("CLIENT_URL")
-      const resetLink = `${clientUrl}/reset-new-password/${resetCode}`;
-  
+    await this.userRepository.save(user);
+    const clientUrl = this.configService.get<string>('CLIENT_URL');
+    const resetLink = `${clientUrl}/reset-new-password/${resetCode}`;
+
     try {
       await this.emailService.sendForgotPasswordMail(sanitizedEmail, resetLink);
     } catch (error) {
@@ -305,8 +299,6 @@ export class AuthService {
       message: 'Password reset link sent successfully',
     };
   }
-
-
 
   /** --------- Reset password --------******/
 
@@ -375,74 +367,76 @@ export class AuthService {
   //   };
   // }
 
-
-   /** --------- Reset password --------******/
+  /** --------- Reset password --------******/
 
   async resetPassword(
-  resetCode: string,
-  resetPasswordDto: ResetPasswordDto,
-): Promise<{ status: string; message: string }> {
-  const { email, newPassword } = resetPasswordDto;
-  const sanitizedEmail = email.trim().toLowerCase();
+    resetCode: string,
+    resetPasswordDto: ResetPasswordDto,
+  ): Promise<{ status: string; message: string }> {
+    const { email, newPassword } = resetPasswordDto;
+    const sanitizedEmail = email.trim().toLowerCase();
 
-  // Validate input
-  if (!sanitizedEmail || !resetCode?.trim() || !newPassword?.trim()) {
-    throw new BadRequestException({
-      status: 'error',
-      message: 'Invalid email, reset code, or new password',
-    });
+    // Validate input
+    if (!sanitizedEmail || !resetCode?.trim() || !newPassword?.trim()) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Invalid email, reset code, or new password',
+      });
+    }
+
+    // Find user
+    let user: User | null;
+    try {
+      user = await this.userRepository.findOne({
+        where: { email: sanitizedEmail, resetToken: resetCode },
+      });
+    } catch (error) {
+      throw new InternalServerErrorException({
+        status: 'error',
+        message: 'Failed to retrieve user',
+      });
+    }
+
+    // ✅ Guard against undefined expiration
+    if (
+      !user ||
+      !user.resetTokenExpires ||
+      user.resetTokenExpires < new Date()
+    ) {
+      throw new BadRequestException({
+        status: 'error',
+        message: 'Invalid or expired reset code',
+      });
+    }
+
+    // Hash new password
+    let hash: string;
+    try {
+      hash = await bcrypt.hash(newPassword, 10);
+    } catch (error) {
+      throw new InternalServerErrorException({
+        status: 'error',
+        message: 'Failed to hash password',
+      });
+    }
+
+    // Update user
+    user.password = hash;
+    user.resetToken = undefined; // ✅ use undefined instead of null
+    user.resetTokenExpires = undefined; // ✅ use undefined instead of null
+
+    try {
+      await this.userRepository.save(user);
+    } catch (error) {
+      throw new InternalServerErrorException({
+        status: 'error',
+        message: 'Failed to reset password',
+      });
+    }
+
+    return {
+      status: 'success',
+      message: 'Password reset successfully',
+    };
   }
-
-  // Find user
-  let user: User | null;
-  try {
-    user = await this.userRepository.findOne({
-      where: { email: sanitizedEmail, resetToken: resetCode },
-    });
-  } catch (error) {
-    throw new InternalServerErrorException({
-      status: 'error',
-      message: 'Failed to retrieve user',
-    });
-  }
-
-  // ✅ Guard against undefined expiration
-  if (!user || !user.resetTokenExpires || user.resetTokenExpires < new Date()) {
-    throw new BadRequestException({
-      status: 'error',
-      message: 'Invalid or expired reset code',
-    });
-  }
-
-  // Hash new password
-  let hash: string;
-  try {
-    hash = await bcrypt.hash(newPassword, 10);
-  } catch (error) {
-    throw new InternalServerErrorException({
-      status: 'error',
-      message: 'Failed to hash password',
-    });
-  }
-
-  // Update user
-  user.password = hash;
-  user.resetToken = undefined;          // ✅ use undefined instead of null
-  user.resetTokenExpires = undefined;   // ✅ use undefined instead of null
-
-  try {
-    await this.userRepository.save(user);
-  } catch (error) {
-    throw new InternalServerErrorException({
-      status: 'error',
-      message: 'Failed to reset password',
-    });
-  }
-
-  return {
-    status: 'success',
-    message: 'Password reset successfully',
-  };
-}
-
 }
