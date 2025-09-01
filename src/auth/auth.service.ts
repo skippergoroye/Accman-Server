@@ -300,143 +300,91 @@ export class AuthService {
     };
   }
 
+ 
   /** --------- Reset password --------******/
 
-  // async resetPassword(
-  //   resetPasswordDto: ResetPasswordDto,
-  // ): Promise<{ status: string; message: string }> {
-  //   const { email, resetCode, newPassword } = resetPasswordDto;
-  //   const sanitizedEmail = email.trim().toLowerCase();
+ async resetPassword(
+  resetCode: string,
+  resetPasswordDto: ResetPasswordDto,
+): Promise<{ status: string; message: string }> {
+  const { email, newPassword, confirmPassword } = resetPasswordDto;
+  const sanitizedEmail = email.trim().toLowerCase();
 
-  //   // Validate input
-  //   if (!sanitizedEmail || !resetCode?.trim() || !newPassword?.trim()) {
-  //     throw new BadRequestException({
-  //       status: 'error',
-  //       message: 'Invalid email, reset code, or new password',
-  //     });
-  //   }
-
-  //   // Find user
-  //   let user: User | null;
-  //   try {
-  //     user = await this.userRepository.findOne({
-  //       where: { email: sanitizedEmail, resetToken: resetCode },
-  //     });
-  //   } catch (error) {
-  //     throw new InternalServerErrorException({
-  //       status: 'error',
-  //       message: 'Failed to retrieve user',
-  //     });
-  //   }
-
-  //   if (!user || user.resetTokenExpires < new Date()) {
-  //     throw new BadRequestException({
-  //       status: 'error',
-  //       message: 'Invalid or expired reset code',
-  //     });
-  //   }
-
-  //   // Hash new password
-  //   let hash: string;
-  //   try {
-  //     hash = await bcrypt.hash(newPassword, 10);
-  //   } catch (error) {
-  //     throw new InternalServerErrorException({
-  //       status: 'error',
-  //       message: 'Failed to hash password',
-  //     });
-  //   }
-
-  //   // Update user
-  //   user.password = hash;
-  //   user.resetToken = null;
-  //   user.resetTokenExpires = null;
-
-  //   try {
-  //     await this.userRepository.save(user);
-  //   } catch (error) {
-  //     throw new InternalServerErrorException({
-  //       status: 'error',
-  //       message: 'Failed to reset password',
-  //     });
-  //   }
-
-  //   return {
-  //     status: 'success',
-  //     message: 'Password reset successfully',
-  //   };
-  // }
-
-  /** --------- Reset password --------******/
-
-  async resetPassword(
-    resetCode: string,
-    resetPasswordDto: ResetPasswordDto,
-  ): Promise<{ status: string; message: string }> {
-    const { email, newPassword } = resetPasswordDto;
-    const sanitizedEmail = email.trim().toLowerCase();
-
-    // Validate input
-    if (!sanitizedEmail || !resetCode?.trim() || !newPassword?.trim()) {
-      throw new BadRequestException({
-        status: 'error',
-        message: 'Invalid email, reset code, or new password',
-      });
-    }
-
-    // Find user
-    let user: User | null;
-    try {
-      user = await this.userRepository.findOne({
-        where: { email: sanitizedEmail, resetToken: resetCode },
-      });
-    } catch (error) {
-      throw new InternalServerErrorException({
-        status: 'error',
-        message: 'Failed to retrieve user',
-      });
-    }
-
-    // ✅ Guard against undefined expiration
-    if (
-      !user ||
-      !user.resetTokenExpires ||
-      user.resetTokenExpires < new Date()
-    ) {
-      throw new BadRequestException({
-        status: 'error',
-        message: 'Invalid or expired reset code',
-      });
-    }
-
-    // Hash new password
-    let hash: string;
-    try {
-      hash = await bcrypt.hash(newPassword, 10);
-    } catch (error) {
-      throw new InternalServerErrorException({
-        status: 'error',
-        message: 'Failed to hash password',
-      });
-    }
-
-    // Update user
-    user.password = hash;
-    user.resetToken = undefined; // ✅ use undefined instead of null
-    user.resetTokenExpires = undefined; // ✅ use undefined instead of null
-
-    try {
-      await this.userRepository.save(user);
-    } catch (error) {
-      throw new InternalServerErrorException({
-        status: 'error',
-        message: 'Failed to reset password',
-      });
-    }
-
-    return {
-      status: 'success',
-      message: 'Password reset successfully',
-    };
+  // Validate input
+  if (
+    !sanitizedEmail ||
+    !resetCode?.trim() ||
+    !newPassword?.trim() ||
+    !confirmPassword?.trim()
+  ) {
+    throw new BadRequestException({
+      status: 'error',
+      message: 'Invalid email, reset code, or new password',
+    });
   }
+
+  // ✅ Ensure passwords match
+  if (newPassword !== confirmPassword) {
+    throw new BadRequestException({
+      status: 'error',
+      message: 'Passwords do not match',
+    });
+  }
+
+  // Find user
+  let user: User | null;
+  try {
+    user = await this.userRepository.findOne({
+      where: { email: sanitizedEmail, resetToken: resetCode },
+    });
+  } catch (error) {
+    throw new InternalServerErrorException({
+      status: 'error',
+      message: 'Failed to retrieve user',
+    });
+  }
+
+  // ✅ Guard against undefined expiration
+  if (
+    !user ||
+    !user.resetTokenExpires ||
+    user.resetTokenExpires < new Date()
+  ) {
+    throw new BadRequestException({
+      status: 'error',
+      message: 'Invalid or expired reset code',
+    });
+  }
+
+  // Hash new password
+  let hash: string;
+  try {
+    hash = await bcrypt.hash(newPassword, 10);
+  } catch (error) {
+    throw new InternalServerErrorException({
+      status: 'error',
+      message: 'Failed to hash password',
+    });
+  }
+
+  // Update user
+  user.password = hash;
+  user.resetToken = undefined;
+  user.resetTokenExpires = undefined;
+
+  try {
+    await this.userRepository.save(user);
+  } catch (error) {
+    throw new InternalServerErrorException({
+      status: 'error',
+      message: 'Failed to reset password',
+    });
+  }
+
+  return {
+    status: 'success',
+    message: 'Password reset successfully',
+  };
+}
+
 }
