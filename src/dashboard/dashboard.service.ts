@@ -76,38 +76,7 @@ export class DashboardService {
   }
 
   /***---------- Get Transactions  -----------**/
-  // async getTransactionsByUserId(
-  //   userId: string,
-  //   authUser: JwtPayload,
-  // ): Promise<{ status: string; data: any[]; status_code: number }> {
-  //   // console.log("authUser", authUser)
-  //   try {
-  //     // Authorization check: Ensure the authenticated user can access this userId
-  //     if (authUser.sub !== userId) {
-  //       throw new UnauthorizedException({
-  //         status: 'error',
-  //         message: 'You are not authorized to view these transactions',
-  //       });
-  //     }
-
-  //     const transactions = await this.transactionRepository.find({
-  //       where: { userId: { id: userId } },
-  //     });
-  //     return { status: 'success', data: transactions, status_code: 200 };
-  //   } catch (error) {
-  //     console.log(error);
-  //     if (
-  //       error instanceof BadRequestException ||
-  //       error instanceof UnauthorizedException
-  //     ) {
-  //       throw error;
-  //     }
-  //     throw new InternalServerErrorException({
-  //       status: 'error',
-  //       message: 'Failed to retrieve transactions',
-  //     });
-  //   }
-  // }
+ 
 
 
   async getTransactionsByUserId(
@@ -148,6 +117,43 @@ export class DashboardService {
       throw new InternalServerErrorException({
         status: 'error',
         message: 'Failed to retrieve transactions',
+      });
+    }
+  }
+
+
+
+  /***---------- Get Balance  -----------**/
+  async getUserBalance(userId: string): Promise<{ status: string; balance: number; status_code: number }> {
+    try {
+      if (!userId) {
+        throw new BadRequestException({
+          status: 'error',
+          message: 'Invalid user ID',
+        });
+      }
+
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        throw new BadRequestException({
+          status: 'error',
+          message: 'User not found',
+        });
+      }
+
+      return {
+        status: 'success',
+        balance: user.walletBalance,
+        status_code: 200,
+      };
+    } catch (error) {
+      console.log(error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException({
+        status: 'error',
+        message: 'Failed to retrieve balance',
       });
     }
   }

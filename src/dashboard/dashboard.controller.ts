@@ -30,4 +30,10 @@ export class DashboardController {
   ) {
     return this.dashboardService.getTransactionsByUserId(userId, authUser);
   }
+
+
+   @Get('balance')
+  async getBalance(@GetUser() authUser: JwtPayload) {
+    return this.dashboardService.getUserBalance(authUser.sub);
+  }
 }
