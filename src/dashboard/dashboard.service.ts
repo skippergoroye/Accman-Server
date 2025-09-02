@@ -76,11 +76,44 @@ export class DashboardService {
   }
 
   /***---------- Get Transactions  -----------**/
+  // async getTransactionsByUserId(
+  //   userId: string,
+  //   authUser: JwtPayload,
+  // ): Promise<{ status: string; data: any[]; status_code: number }> {
+  //   // console.log("authUser", authUser)
+  //   try {
+  //     // Authorization check: Ensure the authenticated user can access this userId
+  //     if (authUser.sub !== userId) {
+  //       throw new UnauthorizedException({
+  //         status: 'error',
+  //         message: 'You are not authorized to view these transactions',
+  //       });
+  //     }
+
+  //     const transactions = await this.transactionRepository.find({
+  //       where: { userId: { id: userId } },
+  //     });
+  //     return { status: 'success', data: transactions, status_code: 200 };
+  //   } catch (error) {
+  //     console.log(error);
+  //     if (
+  //       error instanceof BadRequestException ||
+  //       error instanceof UnauthorizedException
+  //     ) {
+  //       throw error;
+  //     }
+  //     throw new InternalServerErrorException({
+  //       status: 'error',
+  //       message: 'Failed to retrieve transactions',
+  //     });
+  //   }
+  // }
+
+
   async getTransactionsByUserId(
     userId: string,
     authUser: JwtPayload,
   ): Promise<{ status: string; data: any[]; status_code: number }> {
-    // console.log("authUser", authUser)
     try {
       // Authorization check: Ensure the authenticated user can access this userId
       if (authUser.sub !== userId) {
@@ -90,16 +123,26 @@ export class DashboardService {
         });
       }
 
-      const transactions = await this.transactionRepository.find({
-        where: { userId: { id: userId } },
-      });
+      const transactions = await this.transactionRepository
+        .createQueryBuilder('transaction')
+        .leftJoinAndSelect('transaction.userId', 'user')
+        .where('user.id = :userId', { userId })
+        .select([
+          'transaction.id',
+          'transaction.type',
+          'transaction.amount',
+          'transaction.status',
+          'transaction.requestId',
+          'transaction.createdAt',
+          'user.firstName',
+          'user.lastName',
+        ])
+        .getMany();
+
       return { status: 'success', data: transactions, status_code: 200 };
     } catch (error) {
       console.log(error);
-      if (
-        error instanceof BadRequestException ||
-        error instanceof UnauthorizedException
-      ) {
+      if (error instanceof BadRequestException || error instanceof UnauthorizedException) {
         throw error;
       }
       throw new InternalServerErrorException({
