@@ -33,7 +33,7 @@ export class DashboardController {
 
 
    @Get('balance')
-  async getBalance(@GetUser() authUser: JwtPayload) {
+   async getBalance(@GetUser() authUser: JwtPayload) {
     return this.dashboardService.getUserBalance(authUser.sub);
   }
 }
