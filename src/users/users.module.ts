@@ -4,9 +4,10 @@ import { UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { AuthModule } from 'src/auth/auth.module';
+import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), AuthModule], // ✅ reuse JwtModule config from AuthModule
+  imports: [TypeOrmModule.forFeature([User]), AuthModule, CloudinaryModule], // ✅ reuse JwtModule config from AuthModule
   controllers: [UsersController],
   providers: [UsersService],
 })

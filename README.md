@@ -11,6 +11,9 @@ nest g resource user
    npm install --save-dev @types/bcrypt
 6. npm install @nestjs/jwt
 7. npm i @nestjs-modules/mailer
+8. npm install cloudinary and npm install --save-dev @types/multer
+
+
 
 
 
