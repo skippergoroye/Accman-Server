@@ -14,6 +14,7 @@ import { EmailService } from 'src/email/email.service';
 import { LoginDto } from 'src/auth/dto/login.dto';
 import { RegisterDto } from 'src/auth/dto/register.dto';
 import { User } from 'src/users/entities/user.entity';
+import { Transaction } from 'src/dashboard/entities/transaction.entity';
 
 @Injectable()
 export class AdminService {
@@ -25,6 +26,7 @@ export class AdminService {
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
     @InjectRepository(User) private readonly usersRepo: Repository<User>,
+     @InjectRepository(Transaction) private readonly transactionsRepo: Repository<Transaction>,
   ) {}
 
   /** --------- Admin Login ------------ */
@@ -227,5 +229,43 @@ export class AdminService {
       status: 'success',
       data: users,
     };
+  }
+
+
+
+  /** --------- Admin Get Metrics ------------ */
+   async getAdminDashboardData() {
+    try {
+      // 🔹 Calculate total wallet balance
+      const { sum } = await this.usersRepo
+        .createQueryBuilder('user')
+        .select('SUM(user.walletBalance)', 'sum')
+        .getRawOne();
+
+      const totalBalance = Number(sum) || 0;
+
+      // 🔹 Count transactions by status
+      const successfulTransactions = await this.transactionsRepo.count({
+        where: { status: 'success' },
+      });
+
+      const failedTransactions = await this.transactionsRepo.count({
+        where: { status: 'failed' },
+      });
+
+      const pendingTransactions = await this.transactionsRepo.count({
+        where: { status: 'pending' },
+      });
+
+      // 🔹 Return structured response
+      return {
+        totalBalance,
+        successfulTransactions,
+        failedTransactions,
+        pendingTransactions,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException('Error fetching admin dashboard data');
+    }
   }
 }

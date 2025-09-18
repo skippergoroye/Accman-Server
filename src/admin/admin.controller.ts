@@ -22,10 +22,23 @@ export class AdminController {
   }
 
 
-  @Get('getusers')
+ @Get('getusers')
  @UseGuards(AdminGuard) 
   getAllUsers(@Query('new') query: string, @Req() req: any) {
     const isNew = query === 'true';
     return this.adminService.getAllUsers(isNew, req.user);
   }
+
+
+  @Get('dashboard')
+  @UseGuards(AdminGuard) 
+  async getDashboard() {
+    const dashboardData = await this.adminService.getAdminDashboardData();
+    return {
+      status_code: 200,
+      status: 'success',
+      data: dashboardData,
+    };
+  }
+
 }
