@@ -41,4 +41,13 @@ export class AdminController {
     };
   }
 
+
+  @Get('fund/requests')
+   @UseGuards(AdminGuard) 
+  async getPendingRequests() {
+    return this.adminService.getPendingFundingRequest();
+  }
+
+
+
 }

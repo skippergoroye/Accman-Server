@@ -10,11 +10,12 @@ import { EmailModule } from 'src/email/email.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { User } from 'src/users/entities/user.entity';
 import { Transaction } from 'src/dashboard/entities/transaction.entity';
+import { FundingRequest } from 'src/dashboard/entities/funding-request.entity';
 
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Admin, Verification, User, Transaction]),
+    TypeOrmModule.forFeature([Admin, Verification, User, Transaction, FundingRequest]),
     AuthModule,
     ConfigModule,
     JwtModule.registerAsync({

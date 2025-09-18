@@ -15,6 +15,7 @@ import { LoginDto } from 'src/auth/dto/login.dto';
 import { RegisterDto } from 'src/auth/dto/register.dto';
 import { User } from 'src/users/entities/user.entity';
 import { Transaction } from 'src/dashboard/entities/transaction.entity';
+import { FundingRequest } from 'src/dashboard/entities/funding-request.entity';
 
 @Injectable()
 export class AdminService {
@@ -27,6 +28,8 @@ export class AdminService {
     private readonly emailService: EmailService,
     @InjectRepository(User) private readonly usersRepo: Repository<User>,
      @InjectRepository(Transaction) private readonly transactionsRepo: Repository<Transaction>,
+    @InjectRepository(FundingRequest) private readonly fundingRequestRepo: Repository<FundingRequest>,
+
   ) {}
 
   /** --------- Admin Login ------------ */
@@ -266,6 +269,25 @@ export class AdminService {
       };
     } catch (error) {
       throw new InternalServerErrorException('Error fetching admin dashboard data');
+    }
+  }
+
+
+
+
+    /** --------- Admin Get Funding request ------------ */
+     async getPendingFundingRequest() {
+    try {
+      const pendingRequests = await this.fundingRequestRepo.find({
+        where: { status: 'pending' },
+      });
+
+      return {
+        status_code: 200,
+        data: pendingRequests,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException('Internal Server Error');
     }
   }
 }
