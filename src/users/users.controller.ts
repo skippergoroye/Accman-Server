@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards, Body, UseInterceptors, UploadedFile, Patch } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Body, UseInterceptors, UploadedFile, Patch, Delete, Req } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -31,4 +31,17 @@ export class UsersController {
   ) {
     return this.usersService.updateUser(id, updateUserDto, file);
   }
+
+
+
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  async deleteUser(@Param('id') id: string, @Req() req: any) {
+    // req.user comes from JwtAuthGuard
+    return this.usersService.deleteUser(id, req.user);
+  }
+
+
+
 }

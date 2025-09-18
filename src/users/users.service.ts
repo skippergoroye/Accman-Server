@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -12,6 +12,8 @@ export class UsersService {
     @InjectRepository(User) private readonly usersRepo: Repository<User>,
   ) {}
 
+
+  /** Find User **/
   async findById(id: string) {
     const user = await this.usersRepo.findOne({ where: { id } });
     if (!user) {
@@ -31,7 +33,7 @@ export class UsersService {
     };
   }
 
-
+  /** Update User **/
   async updateUser(id: string, dto: UpdateUserDto, file?: Express.Multer.File) {
     const user = await this.usersRepo.findOne({ where: { id } });
 
@@ -71,5 +73,48 @@ export class UsersService {
       message: 'User updated successfully',
       data: { user: savedUser },
     };
+  }
+
+
+
+  /** Delete User **/
+  async deleteUser(id: string, currentUser: any) {
+    const user = await this.usersRepo.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException({
+        status_code: 404,
+        status: 'error',
+        error: 'User not found',
+      });
+    }
+
+    // Admin → hard delete
+    if (currentUser.role === 'admin') {
+      await this.usersRepo.remove(user);
+      return {
+        status_code: 200,
+        status: 'success',
+        message: 'User has been hard deleted',
+      };
+    }
+
+    // Self → soft delete
+    if (currentUser.sub === id || currentUser.id === id) {
+      user.deletedAt = new Date();
+      await this.usersRepo.save(user);
+
+      return {
+        status_code: 200,
+        status: 'success',
+        message: 'User has been soft deleted',
+      };
+    }
+
+    // Unauthorized
+    throw new ForbiddenException({
+      status_code: 403,
+      status: 'error',
+      error: 'Unauthorized to delete other users',
+    });
   }
 }
