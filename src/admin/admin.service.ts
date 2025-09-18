@@ -1,80 +1,8 @@
-// import {
-//   Injectable,
-//   BadRequestException,
-//   InternalServerErrorException,
-// } from '@nestjs/common';
-// import { InjectRepository } from '@nestjs/typeorm';
-// import { Repository } from 'typeorm';
-// import { JwtService } from '@nestjs/jwt';
-// import * as bcrypt from 'bcrypt';
-// import { Admin } from './entities/admin.entity';
-// import { LoginDto } from 'src/auth/dto/login.dto';
-
-// @Injectable()
-// export class AdminService {
-//   constructor(
-//     @InjectRepository(Admin)
-//     private readonly adminRepository: Repository<Admin>,
-//     private readonly jwtService: JwtService,
-//   ) {}
-
-//   async adminLogin(
-//     { email, password }: LoginDto,
-//   ): Promise<{ status: string; message: string; accessToken: string }> {
-//     const sanitizedEmail = email?.trim().toLowerCase();
-//     const sanitizedPassword = password?.trim();
-
-//     if (!sanitizedEmail || !sanitizedPassword) {
-//       throw new BadRequestException({
-//         status: 'error',
-//         message: 'Invalid email or password',
-//       });
-//     }
-
-//     let admin: Admin | null;
-//     try {
-//       admin = await this.adminRepository.findOne({
-//         where: { email: sanitizedEmail },
-//         select: ['id', 'password', 'role', 'isVerified'],
-//       });
-//     } catch {
-//       throw new InternalServerErrorException({
-//         status: 'error',
-//         message: 'Unable to retrieve admin',
-//       });
-//     }
-
-//     if (!admin || !(await bcrypt.compare(sanitizedPassword, admin.password))) {
-//       throw new BadRequestException({
-//         status: 'error',
-//         message: 'Invalid email or password',
-//       });
-//     }
-
-//     if (!admin.isVerified) {
-//       throw new BadRequestException({
-//         status: 'error',
-//         message: 'Account has not been verified',
-//       });
-//     }
-
-//     const accessToken = this.jwtService.sign({
-//       sub: admin.id,
-//       role: admin.role ?? 'admin',
-//     });
-
-//     return {
-//       status: 'success',
-//       message: 'Login successful',
-//       accessToken,
-//     };
-//   }
-// }
-
 import {
   Injectable,
   BadRequestException,
   InternalServerErrorException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -85,6 +13,7 @@ import { Verification } from 'src/auth/entities/verification.entity';
 import { EmailService } from 'src/email/email.service';
 import { LoginDto } from 'src/auth/dto/login.dto';
 import { RegisterDto } from 'src/auth/dto/register.dto';
+import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class AdminService {
@@ -95,6 +24,7 @@ export class AdminService {
     private readonly verificationRepository: Repository<Verification>,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
+    @InjectRepository(User) private readonly usersRepo: Repository<User>,
   ) {}
 
   /** --------- Admin Login ------------ */
@@ -274,5 +204,28 @@ export class AdminService {
         message: 'Failed to register admin',
       });
     }
+  }
+
+  /** --------- Admin Get All Users ------------ */
+  async getAllUsers(isNew: boolean, currentUser: any) {
+    if (currentUser.role !== 'admin') {
+      throw new ForbiddenException('Only admins can access this resource');
+    }
+
+    let users: User[];
+    if (isNew) {
+      users = await this.usersRepo.find({
+        order: { createdAt: 'DESC' },
+        take: 5,
+      });
+    } else {
+      users = await this.usersRepo.find();
+    }
+
+    return {
+      status_code: 200,
+      status: 'success',
+      data: users,
+    };
   }
 }

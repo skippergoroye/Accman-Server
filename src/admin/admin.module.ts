@@ -7,10 +7,13 @@ import { Verification } from 'src/auth/entities/verification.entity';
 import { AdminService } from './admin.service';
 import { AdminController } from './admin.controller';
 import { EmailModule } from 'src/email/email.module';
+import { AuthModule } from 'src/auth/auth.module';
+import { User } from 'src/users/entities/user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Admin, Verification]),
+    TypeOrmModule.forFeature([Admin, Verification, User]),
+    AuthModule,
     ConfigModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

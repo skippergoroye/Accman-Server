@@ -1,8 +1,9 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Req, UseGuards } from '@nestjs/common';
 
 import { LoginDto } from 'src/auth/dto/login.dto';
 import { AdminService } from './admin.service';
 import { RegisterDto } from 'src/auth/dto/register.dto';
+import { AdminGuard } from 'src/auth/guards/admin.guard';
 
 
 @Controller('admin')
@@ -18,5 +19,13 @@ export class AdminController {
   @Post('register')
   async adminRegister(@Body() registerDto: RegisterDto) {
     return await this.adminService.adminRegister(registerDto);
+  }
+
+
+  @Get('getusers')
+ @UseGuards(AdminGuard) 
+  getAllUsers(@Query('new') query: string, @Req() req: any) {
+    const isNew = query === 'true';
+    return this.adminService.getAllUsers(isNew, req.user);
   }
 }
