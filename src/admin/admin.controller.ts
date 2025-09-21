@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Req, UseGuards, Patch, Param } from '@nestjs/common';
 
 import { LoginDto } from 'src/auth/dto/login.dto';
 import { AdminService } from './admin.service';
@@ -43,9 +43,17 @@ export class AdminController {
 
 
   @Get('fund/requests')
-   @UseGuards(AdminGuard) 
+  @UseGuards(AdminGuard) 
   async getPendingRequests() {
     return this.adminService.getPendingFundingRequest();
+  }
+
+
+
+   @Patch('approve/:requestId')
+   @UseGuards(AdminGuard) 
+  approveFundingRequest(@Param('requestId') requestId: string) {
+    return this.adminService.approveFundingRequest(requestId);
   }
 
 

@@ -3,6 +3,7 @@ import {
   BadRequestException,
   InternalServerErrorException,
   ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -29,6 +30,7 @@ export class AdminService {
     @InjectRepository(User) private readonly usersRepo: Repository<User>,
      @InjectRepository(Transaction) private readonly transactionsRepo: Repository<Transaction>,
     @InjectRepository(FundingRequest) private readonly fundingRequestRepo: Repository<FundingRequest>,
+   
 
   ) {}
 
@@ -290,4 +292,49 @@ export class AdminService {
       throw new InternalServerErrorException('Internal Server Error');
     }
   }
+
+
+   /** --------- Admin Aprrove Funding request ------------ */
+   async approveFundingRequest(requestId: string) {
+  // 🔹 Find funding request
+  const fundingRequest = await this.fundingRequestRepo.findOne({
+    where: { id: requestId },
+  });
+  if (!fundingRequest) {
+    throw new NotFoundException('Funding request not found');
+  }
+
+  // 🔹 Approve request
+  fundingRequest.status = 'approved';
+  await this.fundingRequestRepo.save(fundingRequest);
+
+  // 🔹 Update user wallet
+  const user = await this.usersRepo.findOne({
+    where: { id: fundingRequest.userId as unknown as string }, // <-- If FundingRequest.userId is a UUID
+  });
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  user.walletBalance += fundingRequest.amount;
+  await this.usersRepo.save(user);
+
+  // 🔹 Update related transaction
+  await this.transactionsRepo.update(
+    {
+      requestId: { id: requestId },   // ✅ relation must be object
+      type: 'funding_request',
+    },
+    { status: 'completed' },
+  );
+
+  return {
+    status_code: 200,
+    message: 'Funding request approved successfully',
+  };
+}
+
+
+  
+
 }
