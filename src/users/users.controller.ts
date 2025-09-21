@@ -1,16 +1,24 @@
-import { Controller, Get, Param, UseGuards, Body, UseInterceptors, UploadedFile, Patch, Delete, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  UseGuards,
+  Body,
+  UseInterceptors,
+  UploadedFile,
+  Patch,
+  Delete,
+  Req,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UpdateUserDto } from './dto/update-user.dto';
 
-
 @Controller('user')
 // @UseGuards(JwtAuthGuard)
 export class UsersController {
-  constructor(
-    private readonly usersService: UsersService,
-  ) {}
+  constructor(private readonly usersService: UsersService) {}
 
   /** get SIngle User */
   @Get('find/:id')
@@ -18,8 +26,6 @@ export class UsersController {
   async getUserById(@Param('id') id: string) {
     return this.usersService.findById(id);
   }
-
-
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
@@ -32,9 +38,6 @@ export class UsersController {
     return this.usersService.updateUser(id, updateUserDto, file);
   }
 
-
-
-
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   async deleteUser(@Param('id') id: string, @Req() req: any) {
@@ -42,6 +45,15 @@ export class UsersController {
     return this.usersService.deleteUser(id, req.user);
   }
 
-
-
+  @Get('balance')
+  @UseGuards(JwtAuthGuard)
+  async getBalance(@Req() req: any) {
+    const userId = req.user.sub; 
+    const balance = await this.usersService.getUserBalance(userId);
+    return {
+      status_code: 200,
+      status: 'success',
+      balance,
+    };
+  }
 }

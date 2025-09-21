@@ -117,4 +117,14 @@ export class UsersService {
       error: 'Unauthorized to delete other users',
     });
   }
+
+
+    /** Get User balance **/
+    async getUserBalance(userId: string): Promise<number> {
+    const user = await this.usersRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user.walletBalance;
+  }
 }
