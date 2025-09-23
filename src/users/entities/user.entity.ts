@@ -53,7 +53,14 @@ export class User {
   @DeleteDateColumn()
   deletedAt?: Date;
 
-  @Column({ type: 'decimal', default: 0 })
+  @Column({
+    type: 'decimal',
+    default: 0,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string | number | null) => (value == null ? 0 : Number(value)),
+    },
+  })
   walletBalance: number;
 
   @Column({ type: 'boolean', default: false })

@@ -143,7 +143,7 @@ export class DashboardService {
 
       return {
         status: 'success',
-        balance: user.walletBalance,
+        balance: Number(user.walletBalance),
         status_code: 200,
       };
     } catch (error) {

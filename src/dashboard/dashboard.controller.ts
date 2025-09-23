@@ -10,7 +10,6 @@ import {
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
-import { User } from 'src/users/entities/user.entity';
 import type { JwtPayload } from './interface/authuserinterface';
 
 @Controller('dashboard')

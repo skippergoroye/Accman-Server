@@ -215,6 +215,7 @@ export class AdminService {
 
   /** --------- Admin Get All Users ------------ */
   async getAllUsers(isNew: boolean, currentUser: any) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (currentUser.role !== 'admin') {
       throw new ForbiddenException('Only admins can access this resource');
     }
@@ -316,7 +317,7 @@ export class AdminService {
     throw new NotFoundException('User not found');
   }
 
-  user.walletBalance += fundingRequest.amount;
+  user.walletBalance = Number(user.walletBalance) + Number(fundingRequest.amount);
   await this.usersRepo.save(user);
 
   // 🔹 Update related transaction
@@ -331,6 +332,7 @@ export class AdminService {
   return {
     status_code: 200,
     message: 'Funding request approved successfully',
+    balance: Number(user.walletBalance),
   };
 }
 
