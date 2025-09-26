@@ -28,10 +28,10 @@ export class AdminService {
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
     @InjectRepository(User) private readonly usersRepo: Repository<User>,
-     @InjectRepository(Transaction) private readonly transactionsRepo: Repository<Transaction>,
-    @InjectRepository(FundingRequest) private readonly fundingRequestRepo: Repository<FundingRequest>,
-   
-
+    @InjectRepository(Transaction)
+    private readonly transactionsRepo: Repository<Transaction>,
+    @InjectRepository(FundingRequest)
+    private readonly fundingRequestRepo: Repository<FundingRequest>,
   ) {}
 
   /** --------- Admin Login ------------ */
@@ -237,10 +237,8 @@ export class AdminService {
     };
   }
 
-
-
   /** --------- Admin Get Metrics ------------ */
-   async getAdminDashboardData() {
+  async getAdminDashboardData() {
     try {
       // 🔹 Calculate total wallet balance
       const { sum } = await this.usersRepo
@@ -271,15 +269,14 @@ export class AdminService {
         pendingTransactions,
       };
     } catch (error) {
-      throw new InternalServerErrorException('Error fetching admin dashboard data');
+      throw new InternalServerErrorException(
+        'Error fetching admin dashboard data',
+      );
     }
   }
 
-
-
-
-    /** --------- Admin Get Funding request ------------ */
-     async getPendingFundingRequest() {
+  /** --------- Admin Get Funding request ------------ */
+  async getPendingFundingRequest() {
     try {
       const pendingRequests = await this.fundingRequestRepo.find({
         where: { status: 'pending' },
@@ -294,49 +291,68 @@ export class AdminService {
     }
   }
 
+  /** --------- Admin Aprrove Funding request ------------ */
+  async approveFundingRequest(requestId: string) {
+    // 🔹 Find funding request
+    const fundingRequest = await this.fundingRequestRepo.findOne({
+      where: { id: requestId },
+    });
+    if (!fundingRequest) {
+      throw new NotFoundException('Funding request not found');
+    }
 
-   /** --------- Admin Aprrove Funding request ------------ */
-   async approveFundingRequest(requestId: string) {
-  // 🔹 Find funding request
-  const fundingRequest = await this.fundingRequestRepo.findOne({
-    where: { id: requestId },
-  });
-  if (!fundingRequest) {
-    throw new NotFoundException('Funding request not found');
+    // 🔹 Approve request
+    fundingRequest.status = 'approved';
+    await this.fundingRequestRepo.save(fundingRequest);
+
+    // 🔹 Update user wallet
+    const user = await this.usersRepo.findOne({
+      where: { id: fundingRequest.userId as unknown as string }, // <-- If FundingRequest.userId is a UUID
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    user.walletBalance =
+      Number(user.walletBalance) + Number(fundingRequest.amount);
+    await this.usersRepo.save(user);
+
+    // 🔹 Update related transaction
+    await this.transactionsRepo.update(
+      {
+        requestId: { id: requestId }, // ✅ relation must be object
+        type: 'funding_request',
+      },
+      { status: 'completed' },
+    );
+
+    return {
+      status_code: 200,
+      message: 'Funding request approved successfully',
+      balance: Number(user.walletBalance),
+    };
   }
 
-  // 🔹 Approve request
-  fundingRequest.status = 'approved';
-  await this.fundingRequestRepo.save(fundingRequest);
+  /** --------- Admin Get All Transactions request ------------ */
 
-  // 🔹 Update user wallet
-  const user = await this.usersRepo.findOne({
-    where: { id: fundingRequest.userId as unknown as string }, // <-- If FundingRequest.userId is a UUID
-  });
-  if (!user) {
-    throw new NotFoundException('User not found');
+
+   async getAllTransactions() {
+    try {
+      const transactions = await this.transactionsRepo.find();
+
+      return {
+        status_code: 200,
+        status: 'success',
+        data: transactions,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException({
+        status_code: 500,
+        status: 'error',
+        error: 'Internal Server Error',
+      });
+    }
   }
 
-  user.walletBalance = Number(user.walletBalance) + Number(fundingRequest.amount);
-  await this.usersRepo.save(user);
-
-  // 🔹 Update related transaction
-  await this.transactionsRepo.update(
-    {
-      requestId: { id: requestId },   // ✅ relation must be object
-      type: 'funding_request',
-    },
-    { status: 'completed' },
-  );
-
-  return {
-    status_code: 200,
-    message: 'Funding request approved successfully',
-    balance: Number(user.walletBalance),
-  };
-}
-
-
-  
 
 }

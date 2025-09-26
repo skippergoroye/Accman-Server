@@ -123,38 +123,5 @@ export class DashboardService {
 
 
 
-  /***---------- Get Balance  -----------**/
-  async getUserBalance(userId: string): Promise<{ status: string; balance: number; status_code: number }> {
-    try {
-      if (!userId) {
-        throw new BadRequestException({
-          status: 'error',
-          message: 'Invalid user ID',
-        });
-      }
 
-      const user = await this.userRepository.findOne({ where: { id: userId } });
-      if (!user) {
-        throw new BadRequestException({
-          status: 'error',
-          message: 'User not found',
-        });
-      }
-
-      return {
-        status: 'success',
-        balance: Number(user.walletBalance),
-        status_code: 200,
-      };
-    } catch (error) {
-      console.log(error);
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      throw new InternalServerErrorException({
-        status: 'error',
-        message: 'Failed to retrieve balance',
-      });
-    }
-  }
 }

@@ -45,6 +45,10 @@ export class UsersController {
     return this.usersService.deleteUser(id, req.user);
   }
 
+
+
+  
+  /***---------- Get Balance  -----------**/
   @Get('balance')
   @UseGuards(JwtAuthGuard)
   async getBalance(@Req() req: any) {
