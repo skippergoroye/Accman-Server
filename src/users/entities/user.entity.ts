@@ -1,10 +1,12 @@
 import { Exclude } from 'class-transformer';
+import { FundingRequest } from 'src/dashboard/entities/funding-request.entity';
 import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
   CreateDateColumn,
   DeleteDateColumn,
+  OneToMany,
 } from 'typeorm';
 
 @Entity('users')
@@ -20,6 +22,9 @@ export class User {
 
   @Column({ unique: true })
   email: string;
+
+  @OneToMany(() => FundingRequest, (request) => request.user)
+ fundingRequests: FundingRequest[];
 
 
   @Exclude()

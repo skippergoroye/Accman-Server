@@ -276,20 +276,45 @@ export class AdminService {
   }
 
   /** --------- Admin Get Funding request ------------ */
-  async getPendingFundingRequest() {
-    try {
-      const pendingRequests = await this.fundingRequestRepo.find({
-        where: { status: 'pending' },
-      });
+  // async getPendingFundingRequest() {
+  //   try {
+  //     const pendingRequests = await this.fundingRequestRepo.find({
+  //       where: { status: 'pending' },
+  //     });
 
-      return {
-        status_code: 200,
-        data: pendingRequests,
-      };
-    } catch (error) {
-      throw new InternalServerErrorException('Internal Server Error');
-    }
+  //     return {
+  //       status_code: 200,
+  //       data: pendingRequests,
+  //     };
+  //   } catch (error) {
+  //     throw new InternalServerErrorException('Internal Server Error');
+  //   }
+  // }
+
+
+  async getPendingFundingRequest() {
+  try {
+    const pendingRequests = await this.fundingRequestRepo.find({
+      where: { status: 'pending' },
+      relations: ['user'], // load the user relation
+    });
+
+    const result = pendingRequests.map((req) => ({
+      ...req,
+      userName: req.user ? `${req.user.firstName} ${req.user.lastName}` : null,
+    }));
+
+    return {
+      status_code: 200,
+      data: result,
+    };
+  } catch (error) {
+    throw new InternalServerErrorException('Internal Server Error');
   }
+}
+
+ 
+
 
   /** --------- Admin Aprrove Funding request ------------ */
   async approveFundingRequest(requestId: string) {
@@ -335,8 +360,7 @@ export class AdminService {
 
   /** --------- Admin Get All Transactions request ------------ */
 
-
-   async getAllTransactions() {
+  async getAllTransactions() {
     try {
       const transactions = await this.transactionsRepo.find();
 
@@ -354,5 +378,38 @@ export class AdminService {
     }
   }
 
+  /** --------- Admin Get Transactions request By Id ------------ */
+  async getTransactionById(userId: string, transactionId: string) {
+    try {
+      const transaction = await this.transactionsRepo.findOne({
+        where: {
+          id: transactionId,
+          userId: { id: userId },
+        },
+        relations: ['userId'],
+      });
 
+      if (!transaction) {
+        throw new NotFoundException({
+          status_code: 404,
+          status: 'error',
+          message: 'Transaction not found',
+        });
+      }
+
+      return {
+        status_code: 200,
+        status: 'success',
+        data: transaction,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+
+      throw new InternalServerErrorException({
+        status_code: 500,
+        status: 'error',
+        error: 'Internal Server Error',
+      });
+    }
+  }
 }

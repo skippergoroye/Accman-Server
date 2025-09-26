@@ -11,6 +11,11 @@ export class FundingRequest {
   @JoinColumn({ name: 'userId' })
   userId: User;
 
+
+  @ManyToOne(() => User, (user) => user.fundingRequests, { eager: false })
+  @JoinColumn({ name: 'userId' })
+  user: User;   // 👈 add this
+
   @Column({ type: 'decimal', nullable: false })
   amount: number;
 

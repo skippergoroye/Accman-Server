@@ -59,12 +59,18 @@ export class AdminController {
     return this.adminService.approveFundingRequest(requestId);
   }
 
-
-   @Get("transactions")
+  @Get('transactions')
   @UseGuards(AdminGuard) // requireAuthAndAdmin equivalent
   async getAllTransactions() {
     return this.adminService.getAllTransactions();
   }
 
-
+  @Get(':id/:transactionId')
+  @UseGuards(AdminGuard)
+  async getTransactionById(
+    @Param('id') id: string,
+    @Param('transactionId') transactionId: string,
+  ) {
+    return this.adminService.getTransactionById(id, transactionId);
+  }
 }
